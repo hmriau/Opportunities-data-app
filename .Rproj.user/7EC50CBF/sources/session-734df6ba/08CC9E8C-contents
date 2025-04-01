@@ -1,0 +1,206 @@
+---
+title: "Research Development Opportunities "
+format: 
+  dashboard:
+    orientation: columns
+    theme: yeti
+execute:
+  echo: false
+  warning: false
+  message: false
+editor: visual
+---
+
+```{r }
+pacman::p_load(REDCapR,shiny, dplyr, ggplot2, DT, plotly, lubridate)
+
+redcap_api_url <- "https://redcap.hmri.org.au/api/"
+redcap_api_token <- "0E9C1022CDE906CFE307D17707A6DAE0"
+
+result <- redcap_read_oneshot(redcap_uri = redcap_api_url,
+                              token = redcap_api_token,
+                               raw_or_label = "label")
+if (result$success) {
+  redcap_data <- result$data
+} else {
+  stop("Error fetching data: ", result$status_message)
+}
+
+
+
+# Optionally, process the data
+summary_table <- redcap_data %>%
+  group_by(opportunity_type) %>%
+  summarize(count = n())
+
+# Create an interactive table of the REDCap data
+redcap_data_filt <- redcap_data %>%
+  filter(opportunity_name != "test") %>%
+  mutate(
+    decision_date = ymd(decision_date),
+   # opportunity_date = dmy(opportunity_date),
+    days_opp_decision =   as.numeric(decision_date - opportunity_date) + 1
+    ) %>%  # + 1 for inclusive days
+  select(opportunity_date, opportunity_name, dev_lead, # lead_contact,
+         opportunity_type , funding_source, deadline, pursue_decision,  status, outcome_date , days_opp_decision)
+
+
+n_opp_ytd <- nrow(redcap_data_filt)
+n_pursued <- nrow(redcap_data_filt %>% filter(pursue_decision == "Yes"))
+n_success <-  nrow(redcap_data_filt %>% filter(status == "Awarded"))
+
+
+# monthly counts
+
+monthly_counts <- redcap_data_filt %>%
+  mutate(month = floor_date(opportunity_date, unit = "month")) %>%  # round dates down to the first day of the month
+  group_by(month) %>%
+  summarise(count = n())
+
+
+# Counts by opportunity type
+
+# Summarize counts by opportunity type
+counts_by_type <- redcap_data_filt %>%
+  group_by(opportunity_type) %>%
+  summarise(count = n())
+
+# Summarize counts by funding source
+counts_by_source <- redcap_data_filt %>%
+  group_by(funding_source) %>%
+  summarise(count = n())
+
+```
+
+## Column
+
+### Row
+
+```{r}
+#| component: valuebox
+#| title: Number of opportunities (YTD)
+list(
+  icon = "activity",
+  color = "primary",
+  value = n_opp_ytd 
+)
+```
+
+```{r}
+#| component: valuebox
+#| title: Opportunities pursued
+list(
+  icon = "pencil",
+  color = "secondary",
+  value = n_pursued
+)
+```
+
+```{r}
+#| component: valuebox
+#| title: Successes
+list(
+  icon = "speedometer2",
+  color = "success",
+  value = n_success
+)
+```
+
+### Row
+
+```{r}
+#| title: Mean days to decision
+# Define current KPI and target
+current_value <- mean(redcap_data_filt$days_opp_decision, na.rm = TRUE)  # e.g., 85 is worse because higher values are bad
+target_value <- 14   # target is lower, since lower is better
+
+# Create the gauge with a reversed axis
+fig <- plot_ly(
+  type = "indicator",
+  mode = "gauge+number+delta",
+  value = current_value,
+  delta = list(reference = target_value),
+  gauge = list(
+    # Reverse the axis order by specifying a descending range
+    axis = list(range = c(100, 0)),
+    bar = list(color = "blue"),
+    # Adjust the steps to match the reversed axis.
+    steps = list(
+      list(range = c(100, 60), color = "red"),    # Worst range
+      list(range = c(60, 15), color = "yellow"),    # Mid range
+      list(range = c(15, 0), color = "green")       # Best range
+    )
+  )
+)
+fig
+
+
+```
+
+```{r}
+#| title: Number of Opportunities per Month
+
+# Create a line plot with Plotly
+fig <- plot_ly(
+  data = monthly_counts,
+  x = ~month,
+  y = ~count,
+  type = 'scatter',
+  mode = 'lines+markers'
+) %>%
+  layout(
+    xaxis = list(title = "Month"),
+    yaxis = list(title = "Count")
+  )
+
+fig
+```
+
+### Row {.tabset}
+
+```{r}
+#| title: Opportunities by Type
+# Create a bar chart with Plotly
+fig <- plot_ly(
+  data = counts_by_type,
+  x = ~opportunity_type,
+  y = ~count,
+  type = 'bar'
+) %>%
+  layout(
+    xaxis = list(title = "Opportunity Type"),
+    yaxis = list(title = "Count")
+  )
+fig
+
+```
+
+```{r}
+#| title: Opportunities by Funding Source
+# Create a bar chart with Plotly
+fig <- plot_ly(
+  data = counts_by_source,
+  x = ~funding_source,
+  y = ~count,
+  type = 'bar'
+) %>%
+  layout(
+    xaxis = list(title = "Opportunity Type"),
+    yaxis = list(title = "Count")
+  )
+
+fig
+```
+
+## Column
+
+```{r}
+#| title: Most Recent Opportunities
+
+datatable(redcap_data_filt,
+          filter = 'top',
+ #         editable = 'cell',
+          options = list(pageLength = 5, order = list(list(0, 'desc'))),
+          rownames = FALSE)
+
+```
