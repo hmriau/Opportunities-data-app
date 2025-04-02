@@ -14,8 +14,8 @@ library(labelled)
 
 # REDCap API connection settings
 
-redcap_url <- "https://redcap.hmri.org.au/api/"
-redcap_token <- "0E9C1022CDE906CFE307D17707A6DAE0"
+redcap_url <-  Sys.getenv("REDCAP_URL")
+redcap_token <- Sys.getenv("REDCAP_TOKEN")
 
 # Research Development Opportunities Register Record Editor
 
