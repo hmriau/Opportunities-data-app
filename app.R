@@ -7,7 +7,7 @@
 #    https://shiny.posit.co/
 #
 
-install.packages("auth0")
+install.packages("auth0", repos = "https://cloud.r-project.org")
 
 library(shiny)
 library(DT)
