@@ -1,0 +1,7 @@
+Type: Shiny
+Imports:
+  shiny,
+  DT,
+  REDCapR,
+  labelled,
+  auth0
