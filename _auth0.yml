@@ -1,7 +1,7 @@
 name: myApp
 remote_url: 'https://hmri-opportunities-data-app.share.connect.posit.cloud'
 auth0_config:
-  api_url: !expr paste0('https://', Sys.getenv('AUTH0_TENANT'), '.auth0.com')
+  api_url: 'https://dev-bahitf7bb2ch18yz.au.auth0.com' 
   credentials:
     key: !expr Sys.getenv("AUTH0_KEY")
     secret: !expr Sys.getenv("AUTH0_SECRET")
