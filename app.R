@@ -216,59 +216,63 @@ server <- function(input, output, session) {
   
   }
   
-  # Save changes
-  observeEvent(input$save, {
-    data <- fetch_data()
-    if (!is.null(data)) {
-      # Create a new data frame with just the record being edited
-      updated_record <- data$raw[data$raw$record_id == input$record_id, ]
-      # Get metadata to understand field types
-      meta <- data$meta
-      # Update each field
-      for (col in names(updated_record)) {
-        # Skip record_id
-        if (col == "record_id") next
-        # Get field metadata
-        field_meta <- meta[meta$field_name == col, ]
-        if (nrow(field_meta) > 0) {
-          if (field_meta$field_type == "checkbox") {
-            # Handle checkbox fields - they have multiple ___ columns
-            choices <- parse_choices(field_meta$select_choices_or_calculations)
-            for (choice in choices) {
-              checkbox_id <- paste0(col, "___", choice$code)
-              if (!is.null(input[[checkbox_id]])) {
-                updated_record[[checkbox_id]] <- ifelse(input[[checkbox_id]], "1", "0")
-              }
-            }
-          } else {
-            # Update regular fields
-            if (!is.null(input[[col]])) {
-              updated_record[[col]] <- input[[col]]
+# Save changes
+observeEvent(input$save, {
+  data <- fetch_data()
+  if (!is.null(data)) {
+    # Create a new data frame with just the record being edited
+    updated_record <- data$raw[data$raw$record_id == input$record_id, ]
+    
+    # Get metadata to understand field types
+    meta <- data$meta
+    
+    # Update each field
+    for (col in names(updated_record)) {
+      # Skip record_id
+      if (col == "record_id") next
+      
+      # Get field metadata
+      field_meta <- meta[meta$field_name == col, ]
+      
+      if (nrow(field_meta) > 0) {
+        if (field_meta$field_type == "checkbox") {
+          # Handle checkbox fields - they have multiple ___ columns
+          choices <- parse_choices(field_meta$select_choices_or_calculations)
+          for (choice in choices) {
+            checkbox_id <- paste0(col, "___", choice$code)
+            if (!is.null(input[[checkbox_id]])) {
+              updated_record[[checkbox_id]] <- ifelse(input[[checkbox_id]], "1", "0")
             }
           }
         } else {
-          # Update fields not in metadata
+          # Update regular fields
           if (!is.null(input[[col]])) {
             updated_record[[col]] <- input[[col]]
           }
         }
-      }
-      # Update the record in REDCap
-      result <- redcap_write(
-        ds_to_write = updated_record,
-        redcap_uri = redcap_url,
-        token = redcap_token
-      )
-      if (result$success) {
-        showNotification("Record updated successfully!", type = "message")
       } else {
-        showNotification("Failed to update record.", type = "error")
+        # Update fields not in metadata
+        if (!is.null(input[[col]])) {
+          updated_record[[col]] <- input[[col]]
+        }
       }
-    
     }
-  })
-}
-
+    
+    # Update the record in REDCap
+    result <- redcap_write(
+      ds_to_write = updated_record,
+      redcap_uri = redcap_url,
+      token = redcap_token
+    )
+    
+    if (result$success) {
+      showNotification("Record updated successfully!", type = "message")
+    } else {
+      showNotification("Failed to update record.", type = "error")
+    }
+  }
+})
+ 
 #shinyApp(ui, server)
 shinyAppAuth0(ui, server)
 #options(shiny.port = 8080)
