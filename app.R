@@ -23,12 +23,11 @@ redcap_token <- Sys.getenv("REDCAP_TOKEN")
 
 # Research Development Opportunities Register Record Editor
 
-ui <- auth0_ui(
+ui <- 
   fluidPage(
     titlePanel("Research Development Opportunities Register Record Editor"),
     sidebarLayout(
       sidebarPanel(
-        h4(textOutput("welcome_msg")),
         selectInput("record_id", "Select Record:", choices = NULL),
         uiOutput("edit_fields"),
         actionButton("save", "Save Changes")
@@ -43,19 +42,9 @@ ui <- auth0_ui(
       ) 
     )
   )
-)
+
 
 server <- function(input, output, session) {
-  
-  # Access user info from Auth0
-  user_info <- reactive({
-    session$userData$auth0_info
-  })
-  
-  # Display welcome message
-  output$welcome_msg <- renderText({
-    paste("Welcome,", user_info()$name)
-  })
   
   # Fetch both raw and labeled data from REDCap
   fetch_data <- reactive({
@@ -225,16 +214,7 @@ server <- function(input, output, session) {
     }
   )
   
-  # Audit logging with user email
-  observeEvent(input$save, {
-    writeLines(
-      sprintf("%s: User %s edited record %s", 
-              Sys.time(), 
-              user_info()$email, 
-              input$record_id),
-      "audit.log"
-    )
-  })
+  }
   
   # Save changes
   observeEvent(input$save, {
@@ -242,18 +222,14 @@ server <- function(input, output, session) {
     if (!is.null(data)) {
       # Create a new data frame with just the record being edited
       updated_record <- data$raw[data$raw$record_id == input$record_id, ]
-      
       # Get metadata to understand field types
       meta <- data$meta
-      
       # Update each field
       for (col in names(updated_record)) {
         # Skip record_id
         if (col == "record_id") next
-        
         # Get field metadata
         field_meta <- meta[meta$field_name == col, ]
-        
         if (nrow(field_meta) > 0) {
           if (field_meta$field_type == "checkbox") {
             # Handle checkbox fields - they have multiple ___ columns
@@ -277,20 +253,18 @@ server <- function(input, output, session) {
           }
         }
       }
-      
       # Update the record in REDCap
       result <- redcap_write(
         ds_to_write = updated_record,
         redcap_uri = redcap_url,
         token = redcap_token
       )
-      
       if (result$success) {
         showNotification("Record updated successfully!", type = "message")
       } else {
         showNotification("Failed to update record.", type = "error")
       }
-      
+    
     }
   })
 }
