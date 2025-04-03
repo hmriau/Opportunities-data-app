@@ -6,10 +6,11 @@
 #
 #    https://shiny.posit.co/
 #
-if (!requireNamespace("pacman", quietly = TRUE)) {
-  install.packages("pacman")
-}
-pacman::p_load(shiny, DT, REDCapR, labelled, auth0)
+library(shiny)
+library(DT)
+library(REDCapR)
+library(labelled)
+library(auth0)
 
 # REDCap API connection settings
 
