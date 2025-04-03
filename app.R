@@ -6,18 +6,14 @@
 #
 #    https://shiny.posit.co/
 #
-if (!require("auth0", quietly = TRUE)) {
-  if (!require("remotes", quietly = TRUE)) {
-    install.packages("remotes", repos = "https://cran.rstudio.com/")
-  }
-  remotes::install_github("curso-r/auth0")  # Replace with correct repo
-  library(auth0)
-}
+
+install.packages("auth0")
 
 library(shiny)
 library(DT)
 library(REDCapR)
 library(labelled)
+library(auth0)
 
 
 # REDCap API connection settings
