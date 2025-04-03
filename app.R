@@ -23,7 +23,7 @@ redcap_token <- Sys.getenv("REDCAP_TOKEN")
 
 # Research Development Opportunities Register Record Editor
 
-ui <- 
+ui <- auth0_ui( 
   fluidPage(
     titlePanel("Research Development Opportunities Register Record Editor"),
     sidebarLayout(
@@ -42,10 +42,17 @@ ui <-
       ) 
     )
   )
-
+)
 
 server <- function(input, output, session) {
-  
+  user_info <- reactive({
+    session$userData$auth0_credentials
+  })
+  output$welcome_msg <- renderText({
+    if (!is.null(user_info())) {
+      paste("Welcome,", user_info()$name)
+    }
+  })
   # Fetch both raw and labeled data from REDCap
   fetch_data <- reactive({
     # Get labeled data for display
