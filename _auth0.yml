@@ -1,5 +1,5 @@
 name: myApp
-remote_url: ''
+remote_url: 'https://hmri-opportunities-data-app.share.connect.posit.cloud'
 auth0_config:
   api_url: !expr paste0('https://', Sys.getenv('AUTH0_TENANT'), '.auth0.com')
   credentials:
