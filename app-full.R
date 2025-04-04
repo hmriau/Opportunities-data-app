@@ -7,38 +7,62 @@
 #    https://shiny.posit.co/
 #
 
+#install.packages("auth0", repos = "https://cloud.r-project.org")
+
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    https://shiny.posit.co/
+#
+
+#install.packages("auth0", repos = "https://cloud.r-project.org")
+
 library(shiny)
 library(DT)
 library(REDCapR)
 library(labelled)
+library(auth0)
+
 
 # REDCap API connection settings
-
 redcap_url <-  Sys.getenv("REDCAP_URL")
 redcap_token <- Sys.getenv("REDCAP_TOKEN")
 
 # Research Development Opportunities Register Record Editor
 
-ui <- fluidPage(
-  titlePanel("Research Development Opportunities Register Record Editor"),
-  sidebarLayout(
-    sidebarPanel(
-      selectInput("record_id", "Select Record:", choices = NULL),
-      uiOutput("edit_fields"),
-      actionButton("save", "Save Changes")
-    ),
-    mainPanel(
-      fluidRow(
-        column(6, downloadButton("export_csv", "Export to CSV", class = "btn-sm")),
-        column(6, downloadButton("export_excel", "Export to Excel", class = "btn-sm")),
-        style = "margin-bottom: 15px;"
+ui <- auth0_ui( 
+  fluidPage(
+    titlePanel("Research Development Opportunities Register Record Editor"),
+    sidebarLayout(
+      sidebarPanel(
+        selectInput("record_id", "Select Record:", choices = NULL),
+        uiOutput("edit_fields"),
+        actionButton("save", "Save Changes")
       ),
-      DTOutput("data_table")
+      mainPanel(
+        fluidRow(
+          column(6, downloadButton("export_csv", "Export to CSV", class = "btn-sm")),
+          column(6, downloadButton("export_excel", "Export to Excel", class = "btn-sm")),
+          style = "margin-bottom: 15px;"
+        ),
+        DTOutput("data_table")
+      ) 
     )
   )
 )
 
 server <- function(input, output, session) {
+  user_info <- reactive({
+    session$userData$auth0_credentials
+  })
+  output$welcome_msg <- renderText({
+    if (!is.null(user_info())) {
+      paste("Welcome,", user_info()$name)
+    }
+  })
   
   # Fetch both raw and labeled data from REDCap
   fetch_data <- reactive({
@@ -183,7 +207,7 @@ server <- function(input, output, session) {
     })
   }
   
-  # Download handlers should be at the top level, not inside observeEvent
+  # Download handlers
   output$export_csv <- downloadHandler(
     filename = function() {
       paste("redcap-data-", Sys.Date(), ".csv", sep="")
@@ -207,7 +231,6 @@ server <- function(input, output, session) {
       }
     }
   )
-  
   
   # Save changes
   observeEvent(input$save, {
@@ -263,9 +286,8 @@ server <- function(input, output, session) {
       } else {
         showNotification("Failed to update record.", type = "error")
       }
-      
     }
   })
 }
-
-shinyApp(ui, server)
+options(shiny.port = 8080)
+shinyAppAuth0(ui, server)
