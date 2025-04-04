@@ -4,14 +4,10 @@ library(REDCapR)
 library(DT)
 library(writexl)
 
-library(shiny)
-library(auth0)
-library(REDCapR)
-library(DT)
-library(writexl)
+install.packages("auth0", repos = "https://cloud.r-project.org" )
 
-options(shiny.port = 8080)
-options(auth0_redirect_uri = "http://localhost:8080")
+#options(shiny.port = 8080)
+#options(auth0_redirect_uri = "http://localhost:8080")
 
 ui <- fluidPage(
   titlePanel("Research Opportunities Editor"),
