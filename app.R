@@ -1,10 +1,11 @@
+
+install.packages("auth0", repos = "https://cloud.r-project.org" )
 library(shiny)
 library(auth0)
 library(REDCapR)
 library(DT)
 library(writexl)
 
-install.packages("auth0", repos = "https://cloud.r-project.org" )
 
 #options(shiny.port = 8080)
 #options(auth0_redirect_uri = "http://localhost:8080")
